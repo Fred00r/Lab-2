@@ -86,127 +86,164 @@ graph TD;
 
 ### 5. Программа
 ```java
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Scanner;
 
-public class MatrixProcessor {
+public class BooleanMatrix {
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
 
-        // Ввод количества строк
-        System.out.print("Введите количество строк (N): ");
-        int n = scanner.nextInt();
+        // Считываем размеры массива
+        System.out.print("Введите размеры массива N и M: ");
+        int N = scanner.nextInt();
+        int M = scanner.nextInt();
 
-        // Объявление матрицы и массивов для сортировки
-        int[][] matrix = new int[n][];
-        int[] negativeCount = new int[n];
-        int[] positiveSum = new int[n];
+        boolean[][] matrix = new boolean[N][M];
 
-        // Ввод данных
-        for (int i = 0; i < n; i++) {
-            System.out.print("Введите количество элементов в строке " + (i + 1) + ": ");
-            int m = scanner.nextInt();
-            matrix[i] = new int[m];
-
-            System.out.println("Введите элементы строки " + (i + 1) + ":");
-            for (int j = 0; j < m; j++) {
-                matrix[i][j] = scanner.nextInt();
-                // Подсчёт отрицательных чисел
-                if (matrix[i][j] < 0) {
-                    negativeCount[i]++;
-                }
-                // Подсчёт суммы положительных чисел
-                if (matrix[i][j] > 0) {
-                    positiveSum[i] += matrix[i][j];
-                }
+        // Считываем элементы массива
+        System.out.println("Введите элементы массива (true/false): ");
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < M; j++) {
+                matrix[i][j] = scanner.nextBoolean();
             }
         }
 
-        // Сортировка строк по количеству отрицательных чисел, затем по сумме положительных чисел
-        for (int i = 0; i < n - 1; i++) {
-            for (int j = i + 1; j < n; j++) {
-                if (negativeCount[i] > negativeCount[j] ||
-                        (negativeCount[i] == negativeCount[j] && positiveSum[i] > positiveSum[j])) {
-                    // Меняем строки местами
-                    int[] tempRow = matrix[i];
-                    matrix[i] = matrix[j];
-                    matrix[j] = tempRow;
+        // Сортируем строки массива
+        Arrays.sort(matrix, new Comparator<boolean[]>() {
+            @Override
+            public int compare(boolean[] row1, boolean[] row2) {
+                int count1 = countTrue(row1);
+                int count2 = countTrue(row2);
 
-                    // Меняем данные для сортировки
-                    int tempNeg = negativeCount[i];
-                    negativeCount[i] = negativeCount[j];
-                    negativeCount[j] = tempNeg;
-
-                    int tempSum = positiveSum[i];
-                    positiveSum[i] = positiveSum[j];
-                    positiveSum[j] = tempSum;
-                }
-            }
-        }
-
-        // Поиск максимального элемента и его индексов
-        int max = Integer.MIN_VALUE;
-        int maxRow = -1, maxCol = -1;
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < matrix[i].length; j++) {
-                if (matrix[i][j] > max) {
-                    max = matrix[i][j];
-                    maxRow = i;
-                    maxCol = j;
-                }
-            }
-        }
-
-        // Вывод матрицы в формате таблицы
-        System.out.println("Отсортированная матрица:");
-        int maxLength = getMaxRowLength(matrix);
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < maxLength; j++) {
-                if (j < matrix[i].length) {
-                    System.out.print(matrix[i][j] + "\t");
+                if (count1 != count2) {
+                    return Integer.compare(count1, count2);
                 } else {
-                    System.out.print("*\t");
+                    return Integer.compare(countConsecutiveTrues(row1), countConsecutiveTrues(row2));
                 }
             }
-            System.out.println();
+        });
+
+        // Находим строку с максимальным количеством последовательных true
+        String maxSequenceRow = "";
+        int maxLength = 0;
+        for (boolean[] row : matrix) {
+            int length = countConsecutiveTrues(row);
+            if (length > maxLength) {
+                maxLength = length;
+                maxSequenceRow = Arrays.toString(row);
+            }
         }
 
-        System.out.println("Максимальный элемент: " + max + " (строка " + (maxRow + 1) + ", столбец " + (maxCol + 1) + ")");
+        System.out.println("Строка с максимальным количеством последовательных true: " + maxSequenceRow);
+        System.out.println("Длина этой последовательности: " + maxLength);
 
-        // Преобразование элементов на обратные значения
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < matrix[i].length; j++) {
-                if (matrix[i][j] != 0) {
-                    matrix[i][j] = 1 / matrix[i][j];
-                }
-            }
-        }
+        // Выводим элементы массива в виде матрицы
+        System.out.println("Элементы массива в виде матрицы:");
+        printMatrix(matrix);
 
-        // Вывод преобразованной матрицы
-        System.out.println("Преобразованная матрица:");
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < maxLength; j++) {
-                if (j < matrix[i].length) {
-                    System.out.print(matrix[i][j] + "\t");
-                } else {
-                    System.out.print("*\t");
-                }
-            }
-            System.out.println();
+        // Подсчет островков
+        int islandsCount = countIslands(matrix);
+        System.out.println("Количество островков (групп соседних true): " + islandsCount);
+
+        // Проверка на симметричность
+        boolean isSymmetric = checkSymmetry(matrix);
+        System.out.println("Массив симметричен относительно главной диагонали: " + isSymmetric);
+
+        if (!isSymmetric) {
+            int minChanges = calculateMinChangesForSymmetry(matrix);
+            System.out.println("Минимальное количество изменений для достижения симметрии: " + minChanges);
         }
 
         scanner.close();
     }
 
-    // Вспомогательная функция для определения максимальной длины строки
-    private static int getMaxRowLength(int[][] matrix) {
-        int maxLength = 0;
-        for (int[] row : matrix) {
-            if (row.length > maxLength) {
-                maxLength = row.length;
+    private static int countTrue(boolean[] row) {
+        int count = 0;
+        for (boolean value : row) {
+            if (value) count++;
+        }
+        return count;
+    }
+
+    private static int countConsecutiveTrues(boolean[] row) {
+        int maxCount = 0;
+        int currentCount = 0;
+
+        for (boolean value : row) {
+            if (value) {
+                currentCount++;
+                maxCount = Math.max(maxCount, currentCount);
+            } else {
+                currentCount = 0;
             }
         }
-        return maxLength;
+
+        return maxCount;
+    }
+
+    private static void printMatrix(boolean[][] matrix) {
+        for (boolean[] row : matrix) {
+            for (boolean value : row) {
+                System.out.print(value ? "+" : "-");
+            }
+            System.out.println();
+        }
+    }
+
+    private static int countIslands(boolean[][] matrix) {
+        boolean[][] visited = new boolean[matrix.length][matrix[0].length];
+        int islandsCount = 0;
+
+        for (int i = 0; i < matrix.length; i++) {
+            for (int j = 0; j < matrix[0].length; j++) {
+                if (matrix[i][j] && !visited[i][j]) {
+                    dfs(matrix, visited, i, j);
+                    islandsCount++;
+                }
+            }
+        }
+
+        return islandsCount;
+    }
+    private static void dfs(boolean[][] matrix, boolean[][] visited, int i, int j) {
+        if (i < 0 || i >= matrix.length || j < 0 || j >= matrix[0].length || !matrix[i][j] || visited[i][j]) {
+            return;
+        }
+
+        visited[i][j] = true;
+
+        // Проверяем все соседние клетки
+        dfs(matrix, visited, i + 1, j);
+        dfs(matrix, visited, i - 1, j);
+        dfs(matrix, visited, i, j + 1);
+        dfs(matrix, visited, i, j - 1);
+    }
+
+    private static boolean checkSymmetry(boolean[][] matrix) {
+        for (int i = 0; i < matrix.length; i++) {
+            for (int j = 0; j < matrix[0].length; j++) {
+                if (matrix[i][j] != matrix[j][i]) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private static int calculateMinChangesForSymmetry(boolean[][] matrix) {
+        int changes = 0;
+
+        for (int i = 0; i < matrix.length; i++) {
+            for (int j = 0; j < matrix[0].length; j++) {
+                if (matrix[i][j] != matrix[j][i]) {
+                    changes++;
+                }
+            }
+        }
+
+        return changes / 2; // Каждое изменение учитывается дважды
     }
 }
 
